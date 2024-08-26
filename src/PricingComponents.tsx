@@ -40,6 +40,10 @@ const FlipCard: React.FC<{ packageKey: string; packageData: Package; className?:
   );
 };
 
+
+
+
+
 const SplitBox: React.FC<{ pkg: string; term: number; color: string; isSelected: boolean }> = ({ pkg, term, color, isSelected }) => (
   <div className={`w-full h-full relative ${isSelected ? 'bg-white' : color} ${isSelected ? 'text-[#A82229]' : 'text-white'}`}>
     <div className="absolute top-0 right-0 p-2">
@@ -199,6 +203,50 @@ export const PricingMatrix: React.FC<{
   );
 };
 
+const formatNumber = (value: number): string => {
+  return value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+};
+
+
+const ExpandableLineItem: React.FC<{
+  label: string;
+  value: number;
+  isExpanded: boolean;
+  toggleExpand: () => void;
+  furnitureCost: number;
+  term: number;
+}> = ({ label, value, isExpanded, toggleExpand, furnitureCost, term }) => {
+  const totalCost = furnitureCost * RSF;
+  const tenantShare = totalCost / term;
+
+  return (
+    <div>
+      <div 
+        className="flex justify-between cursor-pointer"
+        onClick={toggleExpand}
+      >
+        <div className="text-[#A82229]">{label}</div>
+        <div className="text-gray-500">${formatNumber(value)}</div>
+      </div>
+      {isExpanded && (
+        <div className="mt-4 text-sm space-y-3 mb-8 text-[#A82229]">
+          <div className="flex justify-between">
+            <div>Furniture Cost Per sf:</div>
+            <div>${formatNumber(furnitureCost)}</div>
+          </div>
+          <div className="flex justify-between">
+            <div>Total Cost:</div>
+            <div>${formatNumber(totalCost)}</div>
+          </div>
+          <div className="flex justify-between">
+            <div>Tenant Share:</div>
+            <div>${formatNumber(tenantShare)}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 
 
@@ -219,6 +267,13 @@ export const Sidebar: React.FC<{
   const [termPremium, setTermPremium] = useState(0);
   const [baseTermRent, setBaseTermRent] = useState(managementCosts.preOccupancy['Term Rent']);
   const [ner, setNer] = useState<number | null>(null);
+
+
+  const [expandedItems, setExpandedItems] = useState<{ [key: string]: boolean }>({});
+
+  const toggleItemExpand = (item: string) => {
+    setExpandedItems(prev => ({ ...prev, [item]: !prev[item] }));
+  };
 
   useEffect(() => {
     if (selectedBox && isManagementMode) {
@@ -347,7 +402,13 @@ const displayItems = [
   { label: 'Base Rent', value: calculateBaseRent(managementCosts.preOccupancy['Term Rent'], term), isRecurring: true },
   { label: 'Enterprise grade WiFi', value: calculateWifi(), isRecurring: true },
   { label: 'Branding & Signage *', value: calculateBrandingSignage(), isRecurring: false, border: 'A' },
-  { label: 'Furnished', value: calculateFurniture(), isRecurring: true },
+  { 
+    label: 'Furnished', 
+    value: calculateFurniture(), 
+    isRecurring: true,
+    isExpandable: true
+  },
+  
   { label: 'Plant Programming *', value: calculatePlants(), isRecurring: false },
   { label: 'Full Digital Infrastructure', value: calculateDigitalInfrastructure(), isRecurring: true },
   { label: 'Food & Beverage Service', value: calculateFBAndITAV(), isRecurring: true, border: 'B' },
@@ -416,15 +477,26 @@ const displayItems = [
           </div>
           
           <div className="mb-4 space-y-2">
-            {displayItems.map(({label, value, isRecurring, border}) => (
+            {displayItems.map(({label, value, isRecurring, border, isExpandable}) => (
               <React.Fragment key={label}>
-                <LineItem 
-                  label={label} 
-                  value={formatNumber(value)}
-                  opacity={getOpacity(label)}
-                  isBold={!isRecurring}
-                  isItalic={!isRecurring}
-                />
+                {isExpandable ? (
+                  <ExpandableLineItem
+                    label={label}
+                    value={value}
+                    isExpanded={expandedItems[label] || false}
+                    toggleExpand={() => toggleItemExpand(label)}
+                    furnitureCost={managementCosts.preOccupancy['Furniture']}
+                    term={term}
+                  />
+                ) : (
+                  <LineItem 
+                    label={label} 
+                    value={formatNumber(value)}
+                    opacity={getOpacity(label)}
+                    isBold={!isRecurring}
+                    isItalic={!isRecurring}
+                  />
+                )}
                 {border && (
                   <div className="py-3">
                     <hr className={`border-t-2 border-[#A82229] ${getLineOpacity(border)}`} />
