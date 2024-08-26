@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+
+}
+
+
+.box-standard {
+  width: 200px; /* Adjust as needed */
+  height: 150px; /* Adjust as needed */
+}
+
+.row-height-1 {
+  height: 100px;
+}
+
+.row-height-2 {
+  height: 150px;
+}
+
+/* Add more row-height classes as needed */
